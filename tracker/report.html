@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report | ExpenseTracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.4/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #667eea, #764ba2 60%, #1b1f45 100%);
+      color: #eef2ff;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+    .glass-panel {
+      background: rgba(102,126,234,0.15);
+      border: 1px solid rgba(102,126,234,0.3);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+    .card {
+      background: rgba(102,126,234,0.2);
+      border: none;
+    }
+    .btn-accent {
+      background: #7f6bff;
+      border: none;
+      color: #fff;
+    }
+    .btn-accent:hover {
+      background: #6a58f2;
+      color: #fff;
+    }
+    .donut-chart {
+      width: 180px;
+      height: 180px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .donut-chart svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .donut-chart circle {
+      fill: none;
+      stroke-width: 20;
+    }
+    .donut-center-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #e8eeff;
+      text-align: center;
+      pointer-events: none;
+    }
+    .donut-center-text span {
+      font-size: 0.8rem;
+      color: #a8c5ff;
+    }
+    .cat-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .table th, .table td {
+      color: #e8eeff;
+      border-top: none;
+      background: transparent;
+    }
+    .table {
+      background: rgba(102,126,234,0.2);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark py-3">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="expenses.html">ExpenseTracker</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li class="nav-item"><a class="nav-link" href="expenses.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link active" href="report.html">Report</a></li>
+          <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+          <li class="nav-item d-none" id="adminNavItem"><a class="nav-link text-warning" href="admin-dashboard.html"><i class="bi bi-speedometer2 me-1"></i>Admin Panel</a></li>
+          <li class="nav-item"><button class="btn btn-outline-light btn-sm" id="logoutBtn">Logout</button></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-5">
+    <div class="row gy-4">
+      <div class="col-12">
+        <div class="glass-panel p-4 rounded-4">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div>
+              <p style="color: #a8c5ff;" class="mb-1">Expense Report</p>
+              <h1 class="h3 mb-0" style="color: #e8eeff;">Analyze your spending</h1>
+            </div>
+            <a href="expenses.html" class="btn btn-accent">Back to Expenses</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="col-md-6 col-xl-3">
+        <div class="card rounded-4 p-4 h-100">
+          <div style="color: #a8c5ff;" class="mb-3">Total Spent</div>
+          <h2 id="totalSpent" style="color: #e8eeff;">$0</h2>
+        </div>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <div class="card rounded-4 p-4 h-100">
+          <div style="color: #a8c5ff;" class="mb-3">Highest Expense</div>
+          <h2 id="maxExpense" style="color: #e8eeff;">$0</h2>
+        </div>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <div class="card rounded-4 p-4 h-100">
+          <div style="color: #a8c5ff;" class="mb-3">Average Expense</div>
+          <h2 id="avgExpense" style="color: #e8eeff;">$0</h2>
+        </div>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <div class="card rounded-4 p-4 h-100 text-center">
+          <div style="color: #a8c5ff;" class="mb-3">Budget Usage by Category</div>
+          <div class="donut-chart">
+            <svg viewBox="0 0 120 120" id="donutSvg">
+              <circle class="bg" cx="60" cy="60" r="50" stroke="rgba(255,255,255,0.10)" stroke-width="20" fill="none"></circle>
+            </svg>
+            <div class="donut-center-text">
+              <strong id="budgetUsed">0%</strong>
+              <span id="budgetLabel">of $1000</span>
+            </div>
+          </div>
+          <div id="donutLegend" class="mt-3 text-start" style="font-size:0.82rem; color:#e8eeff;"></div>
+        </div>
+      </div>
+
+      <!-- Category breakdown -->
+      <div class="col-12 col-xl-6">
+        <div class="card rounded-4 p-4 h-100">
+          <h5 class="mb-3" style="color: #e8eeff;">Category Breakdown</h5>
+          <ul id="categoryBreakdown" class="list-group list-group-flush"></ul>
+        </div>
+      </div>
+
+      <!-- Recent transactions -->
+      <div class="col-12 col-xl-6">
+        <div class="card rounded-4 p-4 h-100">
+          <h5 class="mb-3" style="color: #e8eeff;">Recent Expenses</h5>
+          <div class="table-responsive">
+            <table class="table table-borderless align-middle mb-0">
+              <thead>
+                <tr style="color: #a8c5ff;" class="small">
+                  <th>Title</th><th>Amount</th><th>Category</th><th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="reportTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  const api = {
+    get: (url) => fetch(url, { credentials: 'include' }).then(r => r.json()),
+    post: (url, data) => fetch(url, { method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
+  };
+
+  // FIX #1 (report tab logs out): checkSession was correct, but the old refactored code
+  // had logout() called unconditionally right after init() — removed that stray call.
+  async function checkSession(requiredRole) {
+    const res = await api.get('api/session.php');
+    if (!res.loggedIn) { window.location.href = 'login.html'; return null; }
+    if (requiredRole && res.user.role !== requiredRole) {
+      window.location.href = 'login.html'; return null;
+    }
+    return res.user;
+  }
+
+  async function logout() {
+    await api.post('api/logout.php', {});
+    window.location.href = 'login.html';
+  }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    async function init() {
+      // Allow both user and admin roles to view the report page
+      const user = await checkSession();
+      if (!user) return;
+
+      if (user.role === 'admin') {
+        document.getElementById('adminNavItem').classList.remove('d-none');
+      }
+
+      const [expenses, budgetData] = await Promise.all([
+        api.get('api/expenses.php'),
+        api.get('api/budget.php'),
+      ]);
+
+      const budget  = budgetData.budget || 1000;
+      const total   = expenses.reduce((s, i) => s + parseFloat(i.amount), 0);
+      const maxAmt  = expenses.length ? Math.max(...expenses.map(i => parseFloat(i.amount))) : 0;
+      const avg     = expenses.length ? total / expenses.length : 0;
+      const pct     = budget > 0 ? Math.min((total / budget) * 100, 100) : 0;
+
+      document.getElementById('totalSpent').textContent    = '$' + total.toFixed(2);
+      document.getElementById('maxExpense').textContent    = '$' + maxAmt.toFixed(2);
+      document.getElementById('avgExpense').textContent    = '$' + avg.toFixed(2);
+      document.getElementById('budgetUsed').textContent    = Math.round(pct) + '%';
+      document.getElementById('budgetLabel').textContent   = 'of $' + budget;
+
+      // ── Segmented donut chart by category ──────────────────────────
+      const CAT_COLORS = [
+        '#7f6bff','#38bdf8','#fb923c','#34d399','#f472b6',
+        '#facc15','#a78bfa','#60a5fa','#4ade80','#f87171'
+      ];
+      const circumference = 2 * Math.PI * 50;   // r=50
+      const svg = document.getElementById('donutSvg');
+      // Remove any previously drawn segments (keep the bg circle)
+      svg.querySelectorAll('.seg').forEach(el => el.remove());
+
+      const catTotalsForDonut = {};
+      expenses.forEach(i => {
+        catTotalsForDonut[i.category] = (catTotalsForDonut[i.category] || 0) + parseFloat(i.amount);
+      });
+      const catEntries = Object.entries(catTotalsForDonut).sort((a,b) => b[1]-a[1]);
+      // Only fill up to the budget; remainder is shown as empty background
+      const totalCapped = Math.min(total, budget);
+      let offset = 0;
+      const legendEl = document.getElementById('donutLegend');
+      legendEl.innerHTML = '';
+
+      if (total === 0 || budget === 0) {
+        legendEl.innerHTML = '<span style="color:#a8c5ff;">No expense data yet.</span>';
+      } else {
+        catEntries.forEach(([cat, val], idx) => {
+          const color = CAT_COLORS[idx % CAT_COLORS.length];
+          const catFrac = Math.min(val, totalCapped) / budget;  // fraction of budget
+          const dashLen = catFrac * circumference;
+          const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+          circle.setAttribute('class','seg');
+          circle.setAttribute('cx','60');
+          circle.setAttribute('cy','60');
+          circle.setAttribute('r','50');
+          circle.setAttribute('fill','none');
+          circle.setAttribute('stroke', color);
+          circle.setAttribute('stroke-width','20');
+          circle.setAttribute('stroke-dasharray', `${dashLen} ${circumference - dashLen}`);
+          circle.setAttribute('stroke-dashoffset', -offset);
+          circle.style.transition = 'stroke-dashoffset 0.6s ease, stroke-dasharray 0.6s ease';
+          svg.appendChild(circle);
+          offset += dashLen;
+
+          const catPct = total > 0 ? Math.round((val / total) * 100) : 0;
+          const row = document.createElement('div');
+          row.className = 'd-flex align-items-center gap-2 mb-1';
+          row.innerHTML = `<span class="cat-legend-dot" style="background:${color};"></span>
+            <span style="flex:1">${cat}</span>
+            <strong>$${val.toFixed(2)}</strong>
+            <span style="color:#a8c5ff;min-width:40px;text-align:right">${catPct}%</span>`;
+          legendEl.appendChild(row);
+        });
+        // If over budget, add a red overflow indicator
+        if (total > budget) {
+          const overRow = document.createElement('div');
+          overRow.className = 'd-flex align-items-center gap-2 mb-1';
+          overRow.innerHTML = `<span class="cat-legend-dot" style="background:#f87171;"></span>
+            <span style="flex:1;color:#f87171">Over Budget</span>
+            <strong style="color:#f87171">+$${(total-budget).toFixed(2)}</strong>`;
+          legendEl.appendChild(overRow);
+        }
+      }
+
+      // Category breakdown
+      const catTotals = {};
+      expenses.forEach(i => {
+        catTotals[i.category] = (catTotals[i.category] || 0) + parseFloat(i.amount);
+      });
+      const catList = document.getElementById('categoryBreakdown');
+      catList.innerHTML = '';
+      if (!Object.keys(catTotals).length) {
+        catList.innerHTML = '<li class="list-group-item">No data yet.</li>';
+      } else {
+        Object.entries(catTotals).forEach(([cat, val]) => {
+          const li = document.createElement('li');
+          li.className = 'list-group-item bg-transparent border-top d-flex justify-content-between align-items-center';
+          li.style.color = '#e8eeff';
+          li.innerHTML = `<span>${cat}</span><strong>$${val.toFixed(2)}</strong>`;
+          catList.appendChild(li);
+        });
+      }
+
+      // Transactions table
+      const tbody = document.getElementById('reportTable');
+      if (!expenses.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4" style="color:#a8c5ff;">No expenses to display.</td></tr>';
+      } else {
+        expenses.slice(0, 10).forEach(item => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${item.title}</td>
+            <td>$${parseFloat(item.amount).toFixed(2)}</td>
+            <td>${item.category}</td>
+            <td>${new Date(item.date).toLocaleDateString()}</td>
+          `;
+        });
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    // FIX: Only call init() — the old code had logout() called right after init() which immediately killed the session
+    init();
+  </script>
+</body>
+</html>

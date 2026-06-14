@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expenses | ExpenseTracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.4/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #667eea, #764ba2 60%, #1b1f45 100%);
+      color: #eef2ff;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+    .glass-panel {
+      backface-visibility: hidden;
+      background: rgba(102,126,234,0.15);
+      border: 1px solid rgba(102,126,234,0.3);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+    .card {
+      background: rgba(102,126,234,0.2);
+      border: none;
+    }
+    .btn-accent {
+      background: #7f6bff;
+      border: none;
+    }
+    .btn-accent:hover {
+      background: #6a58f2;
+    }
+    .form-control,
+    .form-select {
+      background: rgba(102,126,234,0.2);
+      border: 1px solid rgba(102,126,234,0.3);
+      color: #000000;
+    }
+    .form-control:focus,
+    .form-select:focus {
+      background: rgba(102,126,234,0.25);
+      color: #000000;
+      border-color: rgba(102,126,234,0.5);
+      box-shadow: none;
+    }
+    .expense-card:hover {
+      transform: translateY(-2px);
+    }
+    .expense-card {
+      transition: transform 0.25s ease;
+    }
+    .modal-content {
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark py-3">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="expenses.html">ExpenseTracker</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li class="nav-item"><a class="nav-link active" href="expenses.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="report.html">Report</a></li>
+          <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+          <!-- Shown only for admin users (set by JS after session loads) -->
+          <li class="nav-item d-none" id="adminNavItem"><a class="nav-link text-warning" href="admin-dashboard.html"><i class="bi bi-speedometer2 me-1"></i>Admin Panel</a></li>
+          <li class="nav-item"><button class="btn btn-outline-light btn-sm" id="logoutBtn">Logout</button></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main class="container py-5">
+    <div class="row gy-4">
+      <div class="col-12">
+        <div class="glass-panel p-4 rounded-4">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div>
+              <h1 class="h3 mb-1" style="color: #e8eeff;">Welcome, <span id="userName">User</span></h1>
+              <p style="color: #a8c5ff;" class="mb-0">Review your expenses and keep your budget on track.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-accent btn-lg" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openAddBtn"><i class="bi bi-plus-lg me-2"></i>Add Expense</button>
+              <!-- Categories button: visible to ALL logged-in users -->
+              <button class="btn btn-outline-light btn-lg" id="manageCategoriesBtn" data-bs-toggle="modal" data-bs-target="#categoriesModal"><i class="bi bi-tags me-2"></i>Categories</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="row gx-3 gy-3">
+          <div class="col-sm-4">
+            <div class="card rounded-4 p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2" style="color: #a8c5ff;">
+                <span>Total</span>
+                <i class="bi bi-coin fs-4 text-warning"></i>
+              </div>
+              <h3 id="totalAmount" style="color: #e8eeff;">$0</h3>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="card rounded-4 p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2" style="color: #a8c5ff;">
+                <span>This Month</span>
+                <i class="bi bi-calendar3 fs-4 text-info"></i>
+              </div>
+              <h3 id="monthlyAmount" style="color: #e8eeff;">$0</h3>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="card rounded-4 p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2" style="color: #a8c5ff;">
+                <span>Average</span>
+                <i class="bi bi-bar-chart-line fs-4 text-success"></i>
+              </div>
+              <h3 id="averageAmount" style="color: #e8eeff;">$0</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card rounded-4 p-4 h-100">
+          <h5 class="mb-3" style="color: #e8eeff;">Quick Info</h5>
+          <p style="color: #a8c5ff;" class="mb-2"><strong>Email:</strong> <span id="userEmail">user@example.com</span></p>
+          <p style="color: #a8c5ff;" class="mb-2"><strong>Expenses:</strong> <span id="expenseCount">0</span></p>
+          <p style="color: #a8c5ff;" class="mb-2"><strong>Budget:</strong> <span id="budgetValue">$1000</span></p>
+          <!-- BUG FIX #2: Two separate alerts — 90% warning and 100% over-budget alert -->
+          <div id="nearBudgetAlert" class="alert alert-warning d-none py-2 mt-3" role="alert" style="font-size:0.95rem;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Warning: You have used 90% of your budget!
+          </div>
+          <div id="overBudgetAlert" class="alert alert-danger d-none py-2 mt-2" role="alert" style="font-size:0.95rem;">
+            <i class="bi bi-x-octagon-fill me-1"></i> Warning: You are over your budget!
+          </div>
+          <div class="mb-3 mt-3">
+            <label class="form-label" style="color: #e8eeff;">Set Budget</label>
+            <input type="number" class="form-control" id="budgetInput" min="1" step="1" placeholder="Enter budget" />
+          </div>
+          <button class="btn btn-outline-light w-100" id="saveBudgetBtn">Save Budget</button>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="card glass-panel p-4 rounded-4">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h4 class="mb-1" style="color: #e8eeff;">Expense Records</h4>
+              <p style="color: #a8c5ff;" class="mb-0">Edit or delete entries from your expense history.</p>
+            </div>
+          </div>
+          <div id="expenseList" class="row g-3"></div>
+          <div id="emptyState" class="text-center py-5 d-none" style="color: #a8c5ff;">
+            <i class="bi bi-folder-x fs-1 mb-3"></i>
+            <h5>No expenses yet</h5>
+            <p>Add your first expense to see summary cards update instantly.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add/Edit Expense Modal -->
+  <div class="modal fade" id="expenseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-panel border-0">
+        <div class="modal-header border-bottom-0">
+          <h5 class="modal-title" id="expenseModalLabel" style="color: #e8eeff;">Add Expense</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="expenseForm" class="needs-validation" novalidate>
+            <div class="mb-3">
+              <label class="form-label" style="color: #e8eeff;">Title</label>
+              <input type="text" class="form-control" id="expenseTitle" required />
+              <div class="invalid-feedback">Enter an expense title.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="color: #e8eeff;">Amount</label>
+              <input type="number" class="form-control" id="expenseAmount" min="0.5" step="0.01" required />
+              <div class="invalid-feedback">Enter a valid amount.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="color: #e8eeff;">Category</label>
+              <!-- Populated dynamically from DB; defaults to "Other" if none selected -->
+              <select class="form-select" id="expenseCategory">
+                <option value="">-- Select category (optional) --</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="color: #e8eeff;">Date</label>
+              <input type="date" class="form-control" id="expenseDate" required />
+              <div class="invalid-feedback">Select a date.</div>
+            </div>
+            <button type="submit" class="btn btn-accent w-100">Save Expense</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Categories Modal (visible to all logged-in users) -->
+  <div class="modal fade" id="categoriesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-panel border-0" style="color:#e8eeff;">
+        <div class="modal-header border-bottom-0">
+          <h5 class="modal-title"><i class="bi bi-tags me-2"></i>Manage Categories</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <ul id="categoryList" class="list-group mb-3"></ul>
+          <div class="input-group">
+            <input type="text" id="newCategoryInput" class="form-control" placeholder="New category name" maxlength="100" />
+            <button class="btn btn-accent" id="addCategoryBtn">Add</button>
+          </div>
+          <div id="categoryError" class="text-danger small mt-2 d-none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal -->
+  <div class="modal fade" id="alertModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Message</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="alertMessage"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ── API helpers ──────────────────────────────────────────────────
+  const api = {
+    get: (url) =>
+      fetch(url, { credentials: 'include' }).then(r => r.json()),
+    post: (url, data) =>
+      fetch(url, { method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data) }).then(r => r.json()),
+    put: (url, data) =>
+      fetch(url, { method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data) }).then(r => r.json()),
+    delete: (url, data) =>
+      fetch(url, { method: 'DELETE', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data) }).then(r => r.json()),
+  };
+
+  async function checkSession(requiredRole) {
+    const res = await api.get('api/session.php');
+    if (!res.loggedIn) { window.location.href = 'login.html'; return null; }
+    if (requiredRole && res.user.role !== requiredRole) {
+      window.location.href = 'login.html'; return null;
+    }
+    return res.user;
+  }
+
+  async function logout() {
+    await api.post('api/logout.php', {});
+    window.location.href = 'login.html';
+  }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let currentUser = null;
+    let expenses    = [];
+    let categories  = [];
+    let editingId   = null;
+    // "Other" category ID — used as default when no category is selected
+    let defaultCategoryId = null;
+
+    function setDefaultDate() {
+      const dateInput = document.getElementById('expenseDate');
+      if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    async function init() {
+      // Allow both users and admins to access the expenses page
+      currentUser = await checkSession();
+      if (!currentUser) return;
+
+      document.getElementById('userName').textContent  = currentUser.name;
+      document.getElementById('userEmail').textContent = currentUser.email;
+
+      // Show "Admin Panel" navbar link for admin users
+      if (currentUser.role === 'admin') {
+        document.getElementById('adminNavItem').classList.remove('d-none');
+      }
+
+      // Load categories from DB and populate dropdown
+      await reloadCategoryDropdown();
+
+      setDefaultDate();
+      await refreshExpenses();
+      renderBudget();
+    }
+
+    // ── Category dropdown reload ──────────────────────────────────
+    async function reloadCategoryDropdown() {
+      categories = await api.get('api/categories.php');
+      const sel = document.getElementById('expenseCategory');
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">-- Select category (optional) --</option>';
+      categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value       = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+        // Find the "Other"/"Others" category to use as default fallback
+        if (c.name.toLowerCase() === 'other' || c.name.toLowerCase() === 'others') {
+          defaultCategoryId = c.id;
+        }
+      });
+      // Fallback: if no "Other" found, use the first category
+      if (!defaultCategoryId && categories.length > 0) {
+        defaultCategoryId = categories[0].id;
+      }
+      sel.value = prev; // restore prior selection if still valid
+    }
+
+    // ── Expenses ─────────────────────────────────────────────────
+    async function refreshExpenses() {
+      expenses = await api.get('api/expenses.php');
+      renderExpenses();
+      updateSummary();
+    }
+
+    function renderExpenses() {
+      const container  = document.getElementById('expenseList');
+      const emptyState = document.getElementById('emptyState');
+
+      if (!expenses.length) {
+        container.innerHTML = '';
+        emptyState.classList.remove('d-none');
+        return;
+      }
+      emptyState.classList.add('d-none');
+      container.innerHTML = '';
+
+      expenses.slice().forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'col-md-6';
+        card.innerHTML = `
+          <div class="card expense-card rounded-4 p-3">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h5 class="mb-1" style="color: #e8eeff;">${item.title}</h5>
+                <span class="badge" style="background: rgba(102,126,234,0.3); color: #b3d9ff;">${item.category}</span>
+              </div>
+              <div class="text-end">
+                <div class="fw-semibold" style="color: #e8eeff;">$${parseFloat(item.amount).toFixed(2)}</div>
+                <small style="color: #a8c5ff;">${new Date(item.date).toLocaleDateString()}</small>
+              </div>
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+              <button class="btn btn-sm btn-outline-light edit-expense" data-id="${item.id}"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-danger delete-expense" data-id="${item.id}"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.querySelectorAll('.delete-expense').forEach(btn => {
+        btn.addEventListener('click', () => deleteExpense(parseInt(btn.dataset.id)));
+      });
+      document.querySelectorAll('.edit-expense').forEach(btn => {
+        btn.addEventListener('click', () => startEdit(parseInt(btn.dataset.id)));
+      });
+    }
+
+    // ── Summary / budget alerts ───────────────────────────────────
+    function updateSummary() {
+      const total   = expenses.reduce((s, i) => s + parseFloat(i.amount), 0);
+      const budget  = parseFloat(currentUser.budget) || 1000;
+      const monthly = expenses.filter(i => {
+        const d = new Date(i.date);
+        const n = new Date();
+        return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+      }).reduce((s, i) => s + parseFloat(i.amount), 0);
+      const avg = expenses.length ? total / expenses.length : 0;
+
+      document.getElementById('expenseCount').textContent  = expenses.length;
+      document.getElementById('totalAmount').textContent   = '$' + total.toFixed(2);
+      document.getElementById('monthlyAmount').textContent = '$' + monthly.toFixed(2);
+      document.getElementById('averageAmount').textContent = '$' + avg.toFixed(2);
+
+      const pct = budget > 0 ? (total / budget) * 100 : 0;
+      // BUG FIX #2: 90% warning shown at >=90% but <100%; over-budget shown at >=100%
+      document.getElementById('nearBudgetAlert').classList.toggle('d-none', !(pct >= 90 && pct < 100));
+      document.getElementById('overBudgetAlert').classList.toggle('d-none', pct < 100);
+    }
+
+    function renderBudget() {
+      const budget = parseFloat(currentUser.budget) || 1000;
+      document.getElementById('budgetValue').textContent = '$' + budget.toFixed(2);
+      document.getElementById('budgetInput').value = budget;
+    }
+
+    async function saveBudget() {
+      const value = parseFloat(document.getElementById('budgetInput').value);
+      if (!value || value <= 0) { showAlert('Enter a valid budget amount.'); return; }
+      const res = await api.put('api/budget.php', { budget: value });
+      if (res.error) { showAlert(res.error); return; }
+      currentUser.budget = value;
+      renderBudget();
+      updateSummary();
+      showAlert('Budget saved.');
+    }
+
+    // ── Add / Edit Expense ────────────────────────────────────────
+    const expenseForm  = document.getElementById('expenseForm');
+    const expenseModal = new bootstrap.Modal(document.getElementById('expenseModal'));
+
+    expenseForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!expenseForm.checkValidity()) {
+        expenseForm.classList.add('was-validated');
+        return;
+      }
+
+      const title  = document.getElementById('expenseTitle').value.trim();
+      const amount = parseFloat(document.getElementById('expenseAmount').value);
+      const date   = document.getElementById('expenseDate').value;
+
+      // FIX #4: Default to "Other" category if none selected
+      let categoryId = parseInt(document.getElementById('expenseCategory').value);
+      if (!categoryId) categoryId = defaultCategoryId;
+
+      if (!title || !amount || !categoryId || !date) {
+        showAlert('Please fill in all required fields.');
+        return;
+      }
+
+      if (editingId) {
+        await api.put('api/expenses.php', { id: editingId, title, amount, id_categories: categoryId, date });
+        editingId = null;
+      } else {
+        await api.post('api/expenses.php', { title, amount, id_categories: categoryId, date });
+      }
+
+      expenseForm.reset();
+      expenseForm.classList.remove('was-validated');
+      document.getElementById('expenseModalLabel').textContent = 'Add Expense';
+      setDefaultDate();
+      expenseModal.hide();
+      await refreshExpenses();
+    });
+
+    async function deleteExpense(id) {
+      if (!confirm('Delete this expense?')) return;
+      await api.delete('api/expenses.php', { id });
+      await refreshExpenses();
+    }
+
+    function startEdit(id) {
+      const item = expenses.find(e => parseInt(e.id) === id);
+      if (!item) return;
+      editingId = id;
+      document.getElementById('expenseModalLabel').textContent = 'Edit Expense';
+      document.getElementById('expenseTitle').value  = item.title;
+      document.getElementById('expenseAmount').value = item.amount;
+      document.getElementById('expenseDate').value   = item.date ? item.date.split('T')[0] : '';
+      // Prefer id_categories (already in the API response) over name matching
+      const catId = item.id_categories
+        ? item.id_categories
+        : (categories.find(c => c.name === item.category) || {}).id;
+      if (catId) document.getElementById('expenseCategory').value = catId;
+      expenseModal.show();
+    }
+
+    document.getElementById('expenseModal').addEventListener('hidden.bs.modal', () => {
+      editingId = null;
+      expenseForm.reset();
+      expenseForm.classList.remove('was-validated');
+      document.getElementById('expenseModalLabel').textContent = 'Add Expense';
+      setDefaultDate();
+    });
+
+    document.getElementById('openAddBtn').addEventListener('click', () => {
+      editingId = null;
+      document.getElementById('expenseModalLabel').textContent = 'Add Expense';
+      expenseForm.reset();
+      expenseForm.classList.remove('was-validated');
+      setDefaultDate();
+    });
+
+    document.getElementById('saveBudgetBtn').addEventListener('click', saveBudget);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // ── Categories management (all logged-in users) ───────────────
+    async function loadCategoryList() {
+      const cats = await api.get('api/categories.php');
+      const list = document.getElementById('categoryList');
+      list.innerHTML = '';
+      if (!cats.length) {
+        list.innerHTML = '<li class="list-group-item" style="background:rgba(255,255,255,0.08);color:#a8c5ff;">No categories yet.</li>';
+        return;
+      }
+      cats.forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.style.cssText = 'background:rgba(255,255,255,0.08);color:#e8eeff;border-color:rgba(255,255,255,0.15);';
+        li.innerHTML = `<span>${c.name}</span>
+          <button class="btn btn-sm btn-outline-danger delete-cat-btn" data-id="${c.id}" data-name="${c.name}">
+            <i class="bi bi-trash"></i>
+          </button>`;
+        list.appendChild(li);
+      });
+      list.querySelectorAll('.delete-cat-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const catId   = parseInt(btn.dataset.id);
+          const catName = btn.dataset.name;
+          if (!confirm(`Delete category "${catName}"?\nThis will fail if any existing expenses use it.`)) return;
+          const res = await api.delete('api/categories.php', { id: catId });
+          const errEl = document.getElementById('categoryError');
+          if (res.error) {
+            errEl.textContent = res.error;
+            errEl.classList.remove('d-none');
+          } else {
+            errEl.classList.add('d-none');
+            await loadCategoryList();
+            await reloadCategoryDropdown();
+          }
+        });
+      });
+    }
+
+    document.getElementById('categoriesModal').addEventListener('show.bs.modal', loadCategoryList);
+
+    document.getElementById('addCategoryBtn').addEventListener('click', async () => {
+      const input = document.getElementById('newCategoryInput');
+      const name  = input.value.trim();
+      const errEl = document.getElementById('categoryError');
+      if (!name) {
+        errEl.textContent = 'Please enter a category name.';
+        errEl.classList.remove('d-none');
+        return;
+      }
+      const res = await api.post('api/categories.php', { name });
+      if (res.error) {
+        errEl.textContent = res.error;
+        errEl.classList.remove('d-none');
+      } else {
+        errEl.classList.add('d-none');
+        input.value = '';
+        await loadCategoryList();
+        await reloadCategoryDropdown();
+      }
+    });
+
+    document.getElementById('newCategoryInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('addCategoryBtn').click();
+    });
+
+    // ── Start ─────────────────────────────────────────────────────
+    init();
+
+    function showAlert(message) {
+      document.getElementById('alertMessage').textContent = message;
+      const modal = new bootstrap.Modal(document.getElementById('alertModal'));
+      modal.show();
+    }
+  </script>
+</body>
+</html>
